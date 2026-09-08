@@ -1324,26 +1324,25 @@ function startQuiz(){
 function renderQuiz(){
   if(quiz.idx>=quiz.words.length){
     const pct=Math.round(quiz.score/quiz.words.length*100),e=pct>=80?'🎉':pct>=60?'👍':'💪';
-    document.getElementById('quiz-wrap').innerHTML=`<div class="qcard"><div class="qdone"><h2>${e} Quiz Done!</h2><p>You scored <b>${quiz.score}/${quiz.words.length}</b> (${pct}%)</p><button class="qrestart" onclick="startQuiz()">Try Again</button></div></div>`;
+    document.getElementById('quiz-wrap').innerHTML='<div class="qcard"><div class="qdone"><h2>'+e+' Quiz Done!</h2><p>You scored <b>'+quiz.score+'/'+quiz.words.length+'</b> ('+pct+'%)</p><p style="margin-top:8px;font-size:12px;color:#94a3b8">'+(pct>=80?'Excellent! Keep going.':pct>=60?'Good effort. Review the ones you missed.':'Keep practising — you will improve!')+'</p><button class="qrestart" onclick="startQuiz()">Try Again</button></div></div>';
     return;
   }
   const w=quiz.words[quiz.idx];
   const pool=W.filter((_,i)=>ST.learned[i]&&W[i]!==w);
   const wrongs=[...pool].sort(()=>Math.random()-0.5).slice(0,3).map(x=>x[2]);
-  const opts=[w[2],...wrongs].sort(()=>Math.random()-0.5);
-  document.getElementById('quiz-wrap').innerHTML=`<div class="qcard">
-    <div class="qhdr"><span class="qnum">Q ${quiz.idx+1}/${quiz.words.length}</span><span class="qscr">Score: ${quiz.score}</span></div>
-    <div class="qq">${w[0]}</div>
-    <div class="qsub">What does this mean in English?</div>
-    <div class="qopts">${opts.map((o,i)=>`<button class="qopt" onclick="ans(${i},'${o.replace(/'/g,"\\'")}','${w[2].replace(/'/g,"\\'")}',${JSON.stringify(opts)})">${o}</button>`).join('')}</div>
-  </div>`;
+  quiz.currentOpts=[w[2],...wrongs].sort(()=>Math.random()-0.5);
+  quiz.correctAnswer=w[2];
+  const btnHtml=quiz.currentOpts.map((o,i)=>'<button class="qopt" data-idx="'+i+'" onclick="ans(this)">'+(o||'')+'</button>').join('');
+  document.getElementById('quiz-wrap').innerHTML='<div class="qcard"><div class="qhdr"><span class="qnum">Q '+(quiz.idx+1)+'/'+quiz.words.length+'</span><span class="qscr">Score: '+quiz.score+'</span></div><div class="qq">'+w[0]+'</div><div class="qsub">What does this mean in English?</div><div class="qopts">'+btnHtml+'</div></div>';
 }
-function ans(idx,chosen,correct,opts){
+function ans(btn){
   if(quiz.answered)return;
   quiz.answered=true;
+  const chosen=quiz.currentOpts[parseInt(btn.dataset.idx)];
+  const correct=quiz.correctAnswer;
   document.querySelectorAll('.qopt').forEach((b,i)=>{
-    if(opts[i]===correct)b.classList.add('correct');
-    else if(i===idx&&chosen!==correct)b.classList.add('wrong');
+    if(quiz.currentOpts[i]===correct)b.classList.add('correct');
+    else if(b===btn&&chosen!==correct)b.classList.add('wrong');
     else b.classList.add('reveal');
     b.onclick=null;
   });
